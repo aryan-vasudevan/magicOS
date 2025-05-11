@@ -1,0 +1,13 @@
+names:
+- '1'
+- '2'
+nc: 2
+roboflow:
+  license: CC BY 4.0
+  project: magicos
+  url: https://universe.roboflow.com/personal-nh81v/magicos/dataset/1
+  version: 1
+  workspace: personal-nh81v
+test: ../test/images
+train: ../train/images
+val: ../valid/images
