@@ -1,0 +1,10 @@
+{
+    "swipe": {
+        "type": "keybind",
+        "value": "ctrl+alt+z"
+    },
+    "snap": {
+        "type": "app",
+        "value": "Google Chrome"
+    }
+}
