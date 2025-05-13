@@ -30,7 +30,7 @@ class magicOSApp:
         main_panel.pack(side="right", fill="both", expand=True, padx=10, pady=10)
 
         ttk.Label(sidebar, text="Gestures", font=("Segoe UI", 12, "bold")).pack(pady=5)
-        gestures = ["swipe", "snap", "wave", "point"]
+        gestures = ["swipe", "snap"]
         for g in gestures:
             ttk.Radiobutton(
                 sidebar,
