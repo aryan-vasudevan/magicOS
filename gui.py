@@ -3,9 +3,9 @@ from tkinter import ttk, messagebox
 from ttkbootstrap import Style
 import winapps
 import json
-import os
 import threading
 import keyboard
+import os
 
 MAPPINGS_FILE = "gesture_mappings.json"
 
@@ -57,7 +57,7 @@ class magicOSApp:
 
     def on_gesture_select(self):
         print(f"Selected gesture: {self.selected_gesture.get()}")
-    
+
     def record_keybind(self):
         self.keybind_display.config(text="Listening... Press your combo")
 
@@ -77,11 +77,11 @@ class magicOSApp:
             self.keybind_display = ttk.Label(self.action_container, text="Not recorded", font=("Segoe UI", 10, "italic"))
             self.keybind_display.pack(pady=5)
             ttk.Button(self.action_container, text="Start Recording", command=self.record_keybind).pack()
-
         else:
             ttk.Label(self.action_container, text="Select an App to Launch:").pack(anchor="w")
-            app_dropdown = ttk.Combobox(self.action_container, textvariable=self.selected_app, values=self.app_list)
-            app_dropdown.pack(fill="x", pady=5)
+            self.app_dropdown = ttk.Combobox(self.action_container, textvariable=self.selected_app)
+            self.app_dropdown['values'] = [name for name, _ in self.app_list]
+            self.app_dropdown.pack(fill="x", pady=5)
 
     def save_mapping(self):
         gesture = self.selected_gesture.get()
@@ -95,14 +95,28 @@ class magicOSApp:
                 messagebox.showwarning("Empty Keybind", "Please enter a keybind.")
                 return
         else:
-            value = self.selected_app.get()
-            if not value:
+            app_name = self.selected_app.get()
+            if not app_name:
                 messagebox.showwarning("No App", "Please select an application.")
                 return
 
-        # Load mapping file
-        with open(MAPPINGS_FILE, "r") as f:
-            mappings = json.load(f)
+            # Find the corresponding winapps object
+            app_obj = next((app for name, app in self.app_list if name == app_name), None)
+            if not app_obj:
+                messagebox.showerror("Error", f"Application '{app_name}' not found.")
+                return
+
+            value = self.resolve_app_path(app_obj)
+            if not value:
+                messagebox.showerror("Error", f"Could not find executable for '{app_name}'.")
+                return
+
+        # Load existing mappings
+        try:
+            with open(MAPPINGS_FILE, "r") as f:
+                mappings = json.load(f)
+        except FileNotFoundError:
+            mappings = {}
 
         mappings[gesture] = {
             "type": self.action_type.get(),
@@ -115,12 +129,18 @@ class magicOSApp:
         messagebox.showinfo("Success", f"Mapped '{gesture}' to {self.action_type.get()}:\n{value}")
 
     def get_installed_apps(self):
-        return sorted({app.name for app in winapps.list_installed()}) or ["No apps found"]
+        apps = list(winapps.list_installed())
+        return sorted([(app.name, app) for app in apps], key=lambda x: x[0]) or [("No apps found", None)]
 
-# --- MAIN ---
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.geometry("400x250")
-    root.resizable(False, False)
-    app = magicOSApp(root)
-    root.mainloop()
+    def resolve_app_path(self, app):
+        if app.install_location and os.path.isdir(app.install_location):
+            for file in os.listdir(app.install_location):
+                if file.lower().endswith(".exe"):
+                    return os.path.join(app.install_location, file)
+        return None
+
+root = tk.Tk()
+root.geometry("400x250")
+root.resizable(False, False)
+app = magicOSApp(root)
+root.mainloop()

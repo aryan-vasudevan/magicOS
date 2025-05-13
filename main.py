@@ -3,14 +3,18 @@ import mss
 import pygetwindow as gw
 import cv2
 import time
+import json
 from predict import predict
+from execute import execute
+
+MAPPINGS_FILE = "gesture_mappings.json"
 
 # Get the Camo Studio Window
 window = gw.getWindowsWithTitle("Camo Studio")[0]
 window.moveTo(-2780, -248)
 window.resizeTo(500, 600)
 
-# Cooldown settings
+# Cooldown
 COOLDOWN_PERIOD = 2.0
 last_action_time = 0
 cooldown_active = False
@@ -34,17 +38,23 @@ with mss.mss() as sct:
 
         gesture = predict(frame)
 
+        # Time for cooldown
         current_time = time.time()
 
+        # If a gesture is made outside of cooldown
         if not cooldown_active and gesture != "neutral":
             print(f"Gesture detected: {gesture}")
 
-            # Start cooldown
+            # Execute necessary action
+            with open(MAPPINGS_FILE, "r") as f:
+                mappings = json.load(f)
+            action = mappings.get(gesture)
+            execute(action)
+            
+            # Reset cooldown
             cooldown_active = True
             last_action_time = current_time
 
         elif cooldown_active:
             if current_time - last_action_time >= COOLDOWN_PERIOD:
                 cooldown_active = False
-
-cv2.destroyAllWindows()
